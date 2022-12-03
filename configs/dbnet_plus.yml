@@ -1,0 +1,52 @@
+Global:
+    algorithm: DBNet_Plus
+
+    INPUT_SHAPE: [32, null, 1] #IMG_HEIGHT: 32
+    
+    # train params
+    EPOCHS: 1000
+    STEPS_PER_EPOCH: 10 #1000
+    START_EPOCH: 0
+    VAL_STEPS: 10 # 50
+    VAL_FREQ: 1
+    WARMUP_EPOCH: 3
+    WARMUP_LR_BASE: 1e-4    # 1e-5
+    BATCH_SIZE_PER_REPLICA: 2 #64  # 100
+    SHUFFLE_BUFFER_SIZE: 10000 # int(1e7)
+    OUTPUT_DIR: '/home/cluo/Workspace/Projects/general_ocr/outputs/rec_res50_none_bilstm_ctc/'
+    DATA_DIR: '/path/to/tfrecords/'
+
+Dataset:
+    function: datasets.rec.dataset_reader,DatasetReader
+    mode: 'train'
+    simu: '/home/cluo/Workspace/Projects/general_ocr/datasets/rec/datas/train_real.txt'
+    real: '/home/cluo/Workspace/Projects/general_ocr/datasets/rec/datas/train_real.txt'
+
+Architecture:
+    function: modeling.architects.rec_model,RecModel
+
+Backbone:
+    function: modeling.backbones.resnet,ResNet
+    num_layers: 50
+
+Head:
+    function: modeling.heads.ctc_head,CTCPredict
+    NUM_CLASSES: 8535
+    decode_hidden_size: 256
+    
+    encoder_type: rnn
+    SeqEncoderRNN:
+        hidden_size: 256
+        dropout_ratio: 0.25
+    
+Loss:
+    function: modeling.losses.ctc_loss,CTCLoss
+    name: ctc_loss
+
+Optimizer:
+    function: modeling.optimizers,RMSProp
+    learning_rate: 0.0001
+    rho: 0.9
+    momentum: 0.0
+    epsilon: 1e-07
+    centered: False
