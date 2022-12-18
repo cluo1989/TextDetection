@@ -1,50 +1,58 @@
 Global:
-    algorithm: DBNet_Plus
+    algorithm: DBNet++
 
-    INPUT_SHAPE: [32, null, 1] #IMG_HEIGHT: 32
+    INPUT_SHAPE: [null, null, 1] #IMG_HEIGHT: 32
     
     # train params
-    EPOCHS: 1000
-    STEPS_PER_EPOCH: 10 #1000
+    EPOCHS: 1000 # 20000
+    STEPS_PER_EPOCH: 10 #200
     START_EPOCH: 0
-    VAL_STEPS: 10 # 50
-    VAL_FREQ: 1
+
     WARMUP_EPOCH: 3
     WARMUP_LR_BASE: 1e-4    # 1e-5
-    BATCH_SIZE_PER_REPLICA: 2 #64  # 100
-    SHUFFLE_BUFFER_SIZE: 10000 # int(1e7)
-    OUTPUT_DIR: '/home/cluo/Workspace/Projects/general_ocr/outputs/rec_res50_none_bilstm_ctc/'
+
+    VAL_STEPS: 10 # 50
+    VAL_FREQ: 1
+
+    BATCH_SIZE_PER_REPLICA: 2  # 16,32
+    SHUFFLE_BUFFER_SIZE: 100   # 1000
+    OUTPUT_DIR: './outputs/dbnet_plus/'
     DATA_DIR: '/path/to/tfrecords/'
 
 Dataset:
-    function: datasets.rec.dataset_reader,DatasetReader
+    function: datasets.dataset_reader,DatasetReader
     mode: 'train'
-    simu: '/home/cluo/Workspace/Projects/general_ocr/datasets/rec/datas/train_real.txt'
-    real: '/home/cluo/Workspace/Projects/general_ocr/datasets/rec/datas/train_real.txt'
+    simu: './datasets/datas/train_real.txt'
+    real: './datasets/datas/train_real.txt'
 
 Architecture:
-    function: modeling.architects.rec_model,RecModel
+    function: modeling.architectures.dbnet_plus,DBNet_Plus
 
 Backbone:
     function: modeling.backbones.resnet,ResNet
     num_layers: 50
 
+Neck:
+    function: modeling.necks.db_fpn,DBFPN
+    out_channels: 256
+    use_asf: True
+
 Head:
-    function: modeling.heads.ctc_head,CTCPredict
-    NUM_CLASSES: 8535
-    decode_hidden_size: 256
-    
-    encoder_type: rnn
-    SeqEncoderRNN:
-        hidden_size: 256
-        dropout_ratio: 0.25
-    
+    function: modeling.heads.db_head,DBHead
+    in_channels: 256
+    k: 50
+
 Loss:
-    function: modeling.losses.ctc_loss,CTCLoss
-    name: ctc_loss
+    function: modeling.losses.db_loss,DBLoss
+    name: db_loss
+    balance_loss: True
+    main_loss_type: BCELoss
+    alpha: 5
+    beta: 10
+    ohem_ratio: 3
 
 Optimizer:
-    function: modeling.optimizers,RMSProp
+    function: modeling.optimizers.optimizers,RMSProp
     learning_rate: 0.0001
     rho: 0.9
     momentum: 0.0
